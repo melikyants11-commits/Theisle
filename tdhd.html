@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Мир с Трицератопсом</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+    <!-- Подключаем Three.js и загрузчик GLTF -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+<script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+    // 1. Сцена и камера
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87CEEB); // Голубое небо
+    
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 5, 10);
+
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true; // Включаем тени
+    document.body.appendChild(renderer.domElement);
+
+    // 2. Свет
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // Общий свет
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1); // Солнце
+    dirLight.position.set(10, 20, 10);
+    dirLight.castShadow = true;
+    scene.add(dirLight);
+
+    // 3. Трава (Земля)
+    const geometry = new THREE.PlaneGeometry(100, 100);
+    // Простая зеленая заливка, если нет картинки
+    const material = new THREE.MeshStandardMaterial({ color: 0x4caf50 }); 
+    
+    // Если у тебя есть картинка grass.jpg, раскомментируй строки ниже:
+    // const textureLoader = new THREE.TextureLoader();
+    // const grassTexture = textureLoader.load('grass.jpg');
+    // grassTexture.wrapS = THREE.RepeatWrapping;
+    // grassTexture.wrapT = THREE.RepeatWrapping;
+    // grassTexture.repeat.set(10, 10);
+    // material.map = grassTexture;
+
+    const plane = new THREE.Mesh(geometry, material);
+    plane.rotation.x = -Math.PI / 2;
+    plane.receiveShadow = true;
+    scene.add(plane);
+
+    // 4. Загрузка Трицератопса
+    const loader = new GLTFLoader();
+    
+    // ВАЖНО: Файл модели должен называться triceratops.glb и лежать рядом!
+    loader.load(
+        'triceratops.glb', 
+        function (gltf) {
+            const dino = gltf.scene;
+            dino.scale.set(1, 1, 1); // Можно менять размер (например 0.5 или 2)
+            dino.position.set(0, 0, 0); // Стоит в центре
+            
+            // Включаем тени для модели
+            dino.traverse(function (node) {
+                if (node.isMesh) {
+                    node.castShadow = true;
+                    node.receiveShadow = true;
+                }
+            });
+            
+            scene.add(dino);
+            console.log("Динозавр загружен!");
+        },
+        undefined,
+        function (error) {
+            console.error('Ошибка загрузки:', error);
+        }
+    );
+
+    // 5. Управление камерой (мышкой/пальцем)
+    const controls = new OrbitControls(camera, renderer.domElement);
+
+    // Анимация
+    function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    // Ресайз окна
+    window.addEventListener('resize', onWindowResize, false);
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+</script>
+</body>
+</html>
